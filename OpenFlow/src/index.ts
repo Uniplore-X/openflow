@@ -18,6 +18,7 @@ import { OAuthProvider } from "./OAuthProvider";
 import { Span } from "@opentelemetry/api";
 import { QueueClient } from "./QueueClient";
 import { Message } from "./Messages/Message";
+import { UniploreBridge } from "./uniplore-bridge"
 clog("Done loading imports");
 let amqp: amqpwrapper = null;
 async function initamqp(parent: Span) {
@@ -442,6 +443,7 @@ var server: http.Server = null;
         }
         OAuthProvider.configure(WebServer.app, span);
         WebSocketServer.configure(server, span);
+        UniploreBridge.configure(WebServer.app);
         if (!await initDatabase(span)) {
             process.exit(404);
         }

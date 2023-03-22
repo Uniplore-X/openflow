@@ -28,7 +28,7 @@
     "openflow-cli": "./dist/cli.js",
     "openflow-lic": "./dist/cli-lic.js"
   },
-  "optionalDependencies": {
+  "optionalDependencies.bak": {
     "foo": "^2.0.0"
   },
   "dependencies": {
