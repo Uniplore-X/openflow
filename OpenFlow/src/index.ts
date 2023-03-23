@@ -18,7 +18,7 @@ import { OAuthProvider } from "./OAuthProvider";
 import { Span } from "@opentelemetry/api";
 import { QueueClient } from "./QueueClient";
 import { Message } from "./Messages/Message";
-import { UniploreBridge } from "./uniplore-bridge"
+import { UniploreBridge } from "./UniploreBridge"
 clog("Done loading imports");
 let amqp: amqpwrapper = null;
 async function initamqp(parent: Span) {

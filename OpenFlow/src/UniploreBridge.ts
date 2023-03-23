@@ -24,7 +24,7 @@ export class UniploreBridge{
 
     initialize(): void{
         //!!!!!!!!!!!注意：只能在内网安全环境中访问此接口！！！！！
-        this.app.post("/uniplore-bridge",async(req,res)=>{
+        this.app.post("/uniploreBridge",async(req,res)=>{
             const action: string=req.query.action as string || "";
             const span: Span = Logger.otel.startSpanExpress("UniploreBridge."+action, req);
 
