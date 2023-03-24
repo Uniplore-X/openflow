@@ -208,6 +208,8 @@ export class WebSocketServerClient {
                 }
                 return;
             }
+
+            this._socketObject.send(msg.tojson());
         } catch (error) {
             Logger.instanse.error(error, span, Logger.parsecli(this));
             this._receiveQueue = [];
@@ -540,6 +542,13 @@ export class WebSocketServerClient {
                         singleresult.priority = first.priority;
                         if (singleresult.command != "ping" && singleresult.command != "pong") {
                             singleresult.Process(this);
+                        }else if(singleresult.command=="ping"){
+                            singleresult.Reply("pong");
+                            try {
+                                if (this._socketObject != null) this._socketObject.send(JSON.stringify(singleresult));
+                            } catch (error) {
+                                Logger.instanse.error(error, span, Logger.parsecli(this));
+                            }
                         }
                     } else {
                         let chunk: string = "";
@@ -551,6 +560,13 @@ export class WebSocketServerClient {
                         result.priority = first.priority;
                         if (result.command != "ping" && result.command != "pong") {
                             result.Process(this);
+                        }else if(result.command=="ping"){
+                            result.Reply("pong");
+                            try {
+                                if (this._socketObject != null) this._socketObject.send(JSON.stringify(result));
+                            } catch (error) {
+                                Logger.instanse.error(error, span, Logger.parsecli(this));
+                            }
                         }
 
                     }
