@@ -65,23 +65,25 @@ export class UniploreBridge{
 
     //参考：LoginProvider.CreateLocalStrategy
     private async ensureAdmin(req, res, span: Span) {
+        //注意name、username不能是openflow保留的名称：如root,admin,administrator等
+
         const params=req.body;
+        let name: string = params.name || params.username;
         let username: string = params.username;
         let password: string = null;//无需密码，内部会生成随机密码
         if (username !== null && username != undefined) { username = username.toLowerCase(); }
 
-        const jwt: string = Crypt.rootToken();
 
-        let user: User = null;
+        let user: User = await Logger.DBHelper.FindByUsername(username, null, span);
         const providers = await Logger.DBHelper.GetProviders(span);
 
         if (providers.length === 0 || NoderedUtil.IsNullEmpty(providers[0]._id)) {
-            user = await Logger.DBHelper.FindByUsername(username, null, span);
+            //user = await Logger.DBHelper.FindByUsername(username, null, span);
             if (user == null) {//【系统初始化】的首个用户为管理员
                 Logger.instanse.info("No login providers, creating " + username + " as admin", span);
                 user = new User(); user.name = username; user.username = username;
                 //await Crypt.SetPassword(user, password, span);
-                //const jwt: string = Crypt.rootToken();
+                const jwt: string = Crypt.rootToken();
                 user = await Logger.DBHelper.EnsureUser(jwt, user.name, user.username, null, password, null, span);
 
                 const admins: Role = await Logger.DBHelper.FindRoleByName("admins", null, span);
@@ -90,8 +92,13 @@ export class UniploreBridge{
                 await Logger.DBHelper.Save(admins, Crypt.rootToken(), span)
             }
         }else if(user==null){//用户不存在，则创建
-            user = new User(); user.name = username; user.username = username;
-            user = await Logger.DBHelper.EnsureUser(jwt, user.name, user.username, null, password, null, span);
+            const rootJwt: string = Crypt.rootToken();
+            user = new User(); user.name = name; user.username = username;
+            user = await Logger.DBHelper.EnsureUser(rootJwt, user.name, user.username, null, password, null, span);
+        }else if(user.name!==name){
+           const rootJwt: string = Crypt.rootToken();
+            user.name=name;
+            await Logger.DBHelper.Save(user,rootJwt,span);
         }
 
         //判断是否为管理员，若不是、则设置管理员角色
@@ -99,9 +106,12 @@ export class UniploreBridge{
         if (admins == null) throw new Error("Failed locating admins role!")
 
         if (!admins.IsMember(user._id)) {
+            const rootJwt: string = Crypt.rootToken();
             admins.AddMember(user);
-            await Logger.DBHelper.Save(admins, jwt, span);
+            await Logger.DBHelper.Save(admins, rootJwt, span);
         }
+
+        const jwt = Crypt.createToken(user, Config.shorttoken_expires_in);
 
         this.response(res, { code: 200, data: {jwt} });
     }
