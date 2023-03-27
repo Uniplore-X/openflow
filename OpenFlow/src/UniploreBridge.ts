@@ -2,6 +2,7 @@ import * as express from "express";
 import { Span } from "@opentelemetry/api";
 import { Config } from "./Config";
 import { Crypt } from "./Crypt";
+import { Audit } from "./Audit";
 import { Logger } from "./Logger";
 import { LoginProvider, Provider } from "./LoginProvider"
 import { Base, User, NoderedUtil, TokenUser, Role, Rolemember } from "@openiap/openflow-api";
@@ -68,24 +69,49 @@ export class UniploreBridge{
         //注意name、username不能是openflow保留的名称：如root,admin,administrator等
 
         const params=req.body;
+        const isUniploreAdmin = !!params.isUniploreAdmin as boolean;
+        const devPassword: string = params.devPassword;
         let name: string = params.name || params.username;
         let username: string = params.username;
+
         let password: string = null;//无需密码，内部会生成随机密码
         if (username !== null && username != undefined) { username = username.toLowerCase(); }
+
+        let remoteip: string = "";
+        if (!NoderedUtil.IsNullUndefinded(req)) {
+            remoteip = LoginProvider.remoteip(req);
+        }
 
 
         let user: User = await Logger.DBHelper.FindByUsername(username, null, span);
         const providers = await Logger.DBHelper.GetProviders(span);
 
         if (providers.length === 0 || NoderedUtil.IsNullEmpty(providers[0]._id)) {
+            if(!isUniploreAdmin){
+                this.response(res, { code: 1000, msg: "进行OpenFlow初始化时，必须使用uniplore管理员帐号" });
+                return;
+            }
+
             //user = await Logger.DBHelper.FindByUsername(username, null, span);
             if (user == null) {//【系统初始化】的首个用户为管理员
                 Logger.instanse.info("No login providers, creating " + username + " as admin", span);
                 user = new User(); user.name = name; user.username = username;
                 //await Crypt.SetPassword(user, password, span);
                 const jwt: string = Crypt.rootToken();
-                user = await Logger.DBHelper.EnsureUser(jwt, user.name, user.username, null, password, null, span);
+                user = await Logger.DBHelper.EnsureUser(jwt, user.name, user.username, null, devPassword ? devPassword : password, null, span);
 
+                const admins: Role = await Logger.DBHelper.FindRoleByName("admins", null, span);
+                if (admins == null) throw new Error("Failed locating admins role!")
+                admins.AddMember(user);
+                await Logger.DBHelper.Save(admins, Crypt.rootToken(), span)
+            }else{
+                // if (!(await Crypt.ValidatePassword(user, password, span))) {
+                //     Logger.instanse.error("No login providers, login for " + username + " failed", span);
+                //     await Audit.LoginFailed(username, "weblogin", "local", remoteip, "browser", "unknown", span);
+                //     return done(null, false);
+                // }
+
+                Logger.instanse.info("No login providers, updating " + username + " as admin", span);
                 const admins: Role = await Logger.DBHelper.FindRoleByName("admins", null, span);
                 if (admins == null) throw new Error("Failed locating admins role!")
                 admins.AddMember(user);
@@ -94,7 +120,7 @@ export class UniploreBridge{
 
             Logger.instanse.info("Clear cache", span);
             await Logger.DBHelper.clearCache("Initialized", span);
-            //await Audit.LoginSuccess(TokenUser.From(user), "weblogin", "local", remoteip, "browser", "unknown", span);
+            await Audit.LoginSuccess(TokenUser.From(user), "local", "local", remoteip, "browser", "unknown", span);
             const provider: Provider = new Provider(); provider.provider = "local"; provider.name = "Local";
             Logger.instanse.info("Saving local provider", span);
             const result = await Config.db.InsertOne(provider, "config", 0, false, Crypt.rootToken(), span);
@@ -121,6 +147,8 @@ export class UniploreBridge{
         }
 
         const jwt = Crypt.createToken(user, Config.shorttoken_expires_in);
+
+        await Audit.LoginSuccess(TokenUser.From(user), "local", "local", remoteip, "browser", "unknown", span);
 
         this.response(res, { code: 200, data: {jwt} });
     }
