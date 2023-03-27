@@ -74,6 +74,9 @@ export class UniploreBridge{
         let name: string = params.name || params.username;
         let username: string = params.username;
 
+        const clientagent = params.clientagent;
+        const clientversion = params.clientversion;
+
         let password: string = null;//无需密码，内部会生成随机密码
         if (username !== null && username != undefined) { username = username.toLowerCase(); }
 
@@ -130,9 +133,10 @@ export class UniploreBridge{
             const rootJwt: string = Crypt.rootToken();
             user = new User(); user.name = name; user.username = username;
             user = await Logger.DBHelper.EnsureUser(rootJwt, user.name, user.username, null, password, null, span);
-        }else if(user.name!==name){
+        }else if(user.name!==name || user.impersonating){
            const rootJwt: string = Crypt.rootToken();
             user.name=name;
+            user.impersonating='';//设置为空，否则无意开启饰演某个角色、导致数据混乱：使用A帐号登录，但实际更改的数据都是B的
             await Logger.DBHelper.Save(user,rootJwt,span);
         }
 
@@ -148,7 +152,7 @@ export class UniploreBridge{
 
         const jwt = Crypt.createToken(user, Config.shorttoken_expires_in);
 
-        await Audit.LoginSuccess(TokenUser.From(user), "local", "local", remoteip, "browser", "unknown", span);
+        await Audit.LoginSuccess(TokenUser.From(user), "local", "local", remoteip, clientagent, clientversion, span);
 
         this.response(res, { code: 200, data: {jwt} });
     }
