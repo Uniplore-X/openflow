@@ -3,7 +3,7 @@ import { Span } from "@opentelemetry/api";
 import { Config } from "./Config";
 import { Crypt } from "./Crypt";
 import { Logger } from "./Logger";
-import { LoginProvider } from "./LoginProvider"
+import { LoginProvider, Provider } from "./LoginProvider"
 import { Base, User, NoderedUtil, TokenUser, Role, Rolemember } from "@openiap/openflow-api";
 
 export class UniploreBridge{
@@ -81,7 +81,7 @@ export class UniploreBridge{
             //user = await Logger.DBHelper.FindByUsername(username, null, span);
             if (user == null) {//【系统初始化】的首个用户为管理员
                 Logger.instanse.info("No login providers, creating " + username + " as admin", span);
-                user = new User(); user.name = username; user.username = username;
+                user = new User(); user.name = name; user.username = username;
                 //await Crypt.SetPassword(user, password, span);
                 const jwt: string = Crypt.rootToken();
                 user = await Logger.DBHelper.EnsureUser(jwt, user.name, user.username, null, password, null, span);
@@ -91,6 +91,15 @@ export class UniploreBridge{
                 admins.AddMember(user);
                 await Logger.DBHelper.Save(admins, Crypt.rootToken(), span)
             }
+
+            Logger.instanse.info("Clear cache", span);
+            await Logger.DBHelper.clearCache("Initialized", span);
+            //await Audit.LoginSuccess(TokenUser.From(user), "weblogin", "local", remoteip, "browser", "unknown", span);
+            const provider: Provider = new Provider(); provider.provider = "local"; provider.name = "Local";
+            Logger.instanse.info("Saving local provider", span);
+            const result = await Config.db.InsertOne(provider, "config", 0, false, Crypt.rootToken(), span);
+            Logger.instanse.info("local provider created as " + result._id, span);
+            await Logger.DBHelper.CheckCache("config", result, false, false, span);
         }else if(user==null){//用户不存在，则创建
             const rootJwt: string = Crypt.rootToken();
             user = new User(); user.name = name; user.username = username;
