@@ -2,15 +2,15 @@ FROM node:lts-alpine as builder
 # --omit=optional
 RUN npm install yarn gulp typescript browserify tsify -g
 
-#当前处于openflow根目录下，openflow-api与openflow处于同级目录
+#当前处于openflow父目录下，openflow-api与openflow处于同级目录
 #构建前，请使用未install的项目目录
 
 #构建openflow-api
 RUN mkdir /openflow-api
 WORKDIR /openflow-api
-COPY ../openflow-api/package*.json /openflow-api/
+COPY openflow-api/package*.json /openflow-api/
 RUN yarn install
-COPY ../openflow-api/ /openflow-api/
+COPY openflow-api/ /openflow-api/
 RUN yarn build
 RUN yarn link
 
@@ -18,10 +18,10 @@ RUN yarn link
 #构建openflow
 RUN mkdir /app
 WORKDIR /app
-COPY package*.json /app/
+COPY openflow/package*.json /app/
 RUN yarn link "@openiap/openflow-api"
 RUN yarn install
-COPY . /app/
+COPY openflow/ /app/
 RUN gulp sass
 
 RUN gulp
