@@ -8,9 +8,9 @@ RUN npm install yarn gulp typescript browserify tsify -g
 #构建openflow-api
 RUN mkdir /openflow-api
 WORKDIR /openflow-api
-COPY ../penflow-api/package*.json /penflow-api/
+COPY ../openflow-api/package*.json /openflow-api/
 RUN yarn install
-COPY ../penflow-api/ /penflow-api/
+COPY ../openflow-api/ /openflow-api/
 RUN yarn build
 RUN yarn link
 
