@@ -1,6 +1,6 @@
 FROM node:lts-alpine as builder
 # --omit=optional
-RUN npm install yarn gulp typescript browserify tsify -g
+RUN npm install gulp typescript browserify tsify -g
 
 #当前处于openflow父目录下，openflow-api与openflow处于同级目录
 #构建前，请使用未install的项目目录

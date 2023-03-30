@@ -315,11 +315,11 @@ export class WebServer {
             if (NoderedUtil.IsNullEmpty(_hostname)) _hostname = (Config.getEnv("HOSTNAME", undefined) || os.hostname()) || "unknown";
             res.end(JSON.stringify({ "success": "true", "hostname": _hostname, dt: new Date(), traceId, spanId }));
             res.end();
-            span.setStatus({ code: 200 });
+            span.setStatus({ code: 1 });
         } catch (error) {
             console.error(error);
             span.setStatus({
-                code: 500,
+                code: 2,
                 message: error instanceof Error ? error.message : undefined,
             });
         } finally {
