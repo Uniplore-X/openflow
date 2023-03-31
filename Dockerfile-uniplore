@@ -1,5 +1,6 @@
 FROM node:lts-alpine as builder
 # --omit=optional
+#RUN npm install gulp typescript browserify tsify -g --registry http://192.168.100.150:31873/
 RUN npm install gulp typescript browserify tsify -g
 
 #当前处于openflow父目录下，openflow-api与openflow处于同级目录
@@ -9,6 +10,7 @@ RUN npm install gulp typescript browserify tsify -g
 RUN mkdir /openflow-api
 WORKDIR /openflow-api
 COPY openflow-api/package*.json /openflow-api/
+#RUN yarn install --registry http://192.168.100.150:31873/
 RUN yarn install
 COPY openflow-api/ /openflow-api/
 RUN yarn build
@@ -20,6 +22,7 @@ RUN mkdir /app
 WORKDIR /app
 COPY openflow/package*.json /app/
 RUN yarn link "@openiap/openflow-api"
+#RUN yarn install --registry http://192.168.100.150:31873/
 RUN yarn install
 COPY openflow/ /app/
 RUN gulp sass
@@ -37,6 +40,7 @@ COPY --from=builder /app/package*.json .
 COPY --from=builder /app/dist/ .
 # RUN npm install --omit=dev 
 # RUN npm install mongodb
+#RUN npm install --omit=dev --production  --registry http://192.168.100.150:31873/
 RUN npm install --omit=dev --production
 
 ENTRYPOINT ["/usr/local/bin/node", "index.js"]

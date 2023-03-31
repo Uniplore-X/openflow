@@ -9,5 +9,10 @@
 ### 构建镜像
 将openflow与openflow-api放在同一目录，并且没有install过（无需安装依赖），在openflow父目录下执行以下命令：
 ```shell
-docker build -f openflow/Dockerfile-uniplore .
+docker build -t library/uniplore-openflow:x.x.x -f openflow/Dockerfile-uniplore .
+```
+修改镜像名称及tag版本命令：
+```shell
+#docker tag 镜像id 新的名称:新的tag版本
+docker tag f2398326b404 library/uniplore-openflow:0.0.1 
 ```
