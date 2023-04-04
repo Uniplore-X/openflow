@@ -619,6 +619,8 @@ export class Config {
 
     public static mongodb_url: string = Config.getEnv("mongodb_url", "mongodb://localhost:27017");
     public static mongodb_db: string = Config.getEnv("mongodb_db", "openflow");
+    public static mongodb_username: string = Config.getEnv("mongodb_username", "");
+    public static mongodb_password: string = Config.getEnv("mongodb_password", "");
     public static mongodb_minpoolsize: number = parseInt(Config.getEnv("mongodb_minpoolsize", "25"));
     public static mongodb_maxpoolsize: number = parseInt(Config.getEnv("mongodb_maxpoolsize", "25"));
 

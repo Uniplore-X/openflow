@@ -41,6 +41,8 @@ export type GetLatestDocumentVersionOptions = {
 }
 export class DatabaseConnection extends events.EventEmitter {
     private mongodburl: string;
+    private mongodbusername: string;
+    private mongodbpassword: string;
     private cli: MongoClient;
     public db: Db;
     private _dbname: string;
@@ -62,10 +64,12 @@ export class DatabaseConnection extends events.EventEmitter {
     public registerGlobalWatches: boolean = true;
     public queuemonitoringhandle: NodeJS.Timeout = null;
     public queuemonitoringlastrun: Date = new Date();
-    constructor(mongodburl: string, dbname: string, registerGlobalWatches: boolean) {
+    constructor(mongodburl: string, dbname: string, registerGlobalWatches: boolean, mongodbusername: string="", mongodbpassword: string="") {
         super();
         this._dbname = dbname;
         this.mongodburl = mongodburl;
+        this.mongodbusername=mongodbusername;
+        this.mongodbpassword=mongodbpassword;
         this.setMaxListeners(1500);
         if (!NoderedUtil.IsNullEmpty(registerGlobalWatches)) this.registerGlobalWatches = registerGlobalWatches;
 
@@ -154,6 +158,12 @@ export class DatabaseConnection extends events.EventEmitter {
         span?.addEvent("connecting to mongodb");
         Logger.instanse.info("Connecting to mongodb", span);
         const options: MongoClientOptions = { minPoolSize: Config.mongodb_minpoolsize, maxPoolSize: Config.mongodb_maxpoolsize };
+        if(this.mongodbusername){
+            options.auth={
+                username: this.mongodbusername,
+                password: this.mongodbpassword,
+            }
+        }
         this.cli = await MongoClient.connect(this.mongodburl, options);
         Logger.instanse.info("Connected to mongodb", span);
         span?.addEvent("Connected to mongodb");

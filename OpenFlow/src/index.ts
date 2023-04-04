@@ -424,7 +424,7 @@ var server: http.Server = null;
         console.error(error);
         process.exit(404);
     }
-    Config.db = new DatabaseConnection(Config.mongodb_url, Config.mongodb_db, true);
+    Config.db = new DatabaseConnection(Config.mongodb_url, Config.mongodb_db, true, Config.mongodb_username, Config.mongodb_password);
     const span: Span = Logger.otel.startSpan("openflow.startup", null, null);
     try {
         await Config.db.connect(span);
