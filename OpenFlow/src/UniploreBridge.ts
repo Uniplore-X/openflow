@@ -65,12 +65,16 @@ export class UniploreBridge{
     }
 
     //参考：LoginProvider.CreateLocalStrategy
+    //在iDIS里，首次需要使用管理员帐号访问，以完成OpenFlow的初始化
+    //注意：此接口必须是iDIS的管理员调用
     private async ensureAdmin(req, res, span: Span) {
         //注意name、username不能是openflow保留的名称：如root,admin,administrator等
 
         const params=req.body;
+        const namePrefix = (params.namePrefix || "") as string; //当检测name或username为保留名称时，会添加该前缀
         const isUniploreAdmin = !!params.isUniploreAdmin as boolean;
-        const devPassword: string = params.devPassword;
+        const devPassword: string = params.devPassword; //用于本地开发时，用于访问OpenFlow前端Web页面
+
         let name: string = params.name || params.username;
         let username: string = params.username;
 
@@ -79,6 +83,14 @@ export class UniploreBridge{
 
         let password: string = null;//无需密码，内部会生成随机密码
         if (username !== null && username != undefined) { username = username.toLowerCase(); }
+
+        if(Config.db.WellknownNamesArray.indexOf(name)>=0){
+            name=namePrefix+name;
+        }
+
+        if(Config.db.WellknownNamesArray.indexOf(username)>=0){
+            username=namePrefix+username;
+        }
 
         let remoteip: string = "";
         if (!NoderedUtil.IsNullUndefinded(req)) {
