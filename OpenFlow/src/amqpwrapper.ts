@@ -260,8 +260,10 @@ export class amqpwrapper extends events.EventEmitter {
     }
     async reply_queue_close(msg) {
         this.of_logger_ready = false;
-        Logger.instanse.error("Exit, reply channel was closed " + msg, null);
-        process.exit(406);
+        Logger.instanse.error("reply channel was closed " + msg, null);
+        this.conn_close();
+        //Logger.instanse.error("Exit, reply channel was closed " + msg, null);
+        //process.exit(406);
     }
     async AddReplyQueue(parent: Span): Promise<void> {
         const span: Span = Logger.otel.startSubSpan("AddReplyQueue", parent);
